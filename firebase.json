@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "source": ".",
+    "site": "mgvoip-935f9",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
+  }
+}
