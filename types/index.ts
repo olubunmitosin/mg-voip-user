@@ -10,6 +10,12 @@ export type CardProps = {
   value: string
 }
 
+export type CallCenterProps = {
+  credentials: any,
+  username: string,
+  password: string
+}
+
 export type NavItemProps = {
   icon: string,
   title: string,

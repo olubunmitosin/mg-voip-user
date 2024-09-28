@@ -1,22 +1,28 @@
 "use client";
 
 import axios from 'axios';
-import { useEffect, useState } from "react";
-import { useAuthStateStore } from "@/hooks/authStateStore";
-import { ApiResponseInterface } from "@/types";
-import { makeRequest } from "@/helpers/request";
-import { checkBoolean, todayDate } from "@/helpers/common";
 import { useFormik } from "formik";
-import { toast } from "react-toastify";
-import { callSchema } from "@/helpers/validators";
-import { Button, Input, Tooltip, User } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import useApi from "@/hooks/useApi";
+import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import { ApiResponseInterface } from "@/types";
+import { makeRequest } from "@/helpers/request";
+import { callSchema } from "@/helpers/validators";
+import { useAuthStateStore } from "@/hooks/authStateStore";
+import { checkBoolean, todayDate } from "@/helpers/common";
+import { Button, Input, Tooltip, User } from "@nextui-org/react";
+
 import { LoadingContainer } from "@/components/loading-container";
-import { io } from "socket.io-client";
-import Africastalking from 'africastalking-client';
 
 export default function Home() {
+
+    const sipConfigurations = {
+        domain: "ng.sip.africastalking.com",
+        webSocket: "ng.sip.africastalking.com",
+        username: "agent.lagosvoice",
+        password: "DOPx_ad5cf82f2e"
+    };
 
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
@@ -29,43 +35,6 @@ export default function Home() {
 
     const addUser = useAuthStateStore((state) => state.addUser);
     const today = todayDate();
-    // const socket = io(`${process.env.NEXT_PUBLIC_APP_BACKEND_SOCKET}`);
-    // socket.on('connect', () => {
-    //     console.log("Connected to websocket: " + socket.id);
-    // });
-
-    // When call has been made successfully
-    // socket.on("callInitiated", (callObjects) => {
-    //     console.log(callObjects);
-    // });
-
-
-    const initiateCallClient = async () => {
-
-        if (credentials) {
-            const payload = {
-                username: credentials.credentials.username,
-                clientName: user?.email,
-                phoneNumber: credentials.credentials.phone,
-               };
-        
-            let response;
-            
-            try {
-                response = await axios.post('https://webrtc.africastalking.com/capability-token/request', payload, {
-                    headers: {'Access-Control-Allow-Origin': '*'}
-                });
-            } catch (e) {
-                console.log(e);
-            }
-            
-            console.log(response);
-        }
-    }
-
-    useEffect(() => {
-        initiateCallClient();
-     }, [credentials]);
 
     // fetch provider credentials
     const fetchProviderCredentials = async () => {
@@ -80,8 +49,8 @@ export default function Home() {
         }
 
         // TEST
-        setCalling(true);
-        setSessionId('Session849484949');
+        // setCalling(true);
+        // setSessionId('Session849484949');
     }
 
     // Fetch and set user data

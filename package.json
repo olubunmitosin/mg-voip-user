@@ -37,7 +37,6 @@
 		"react-toastify": "^10.0.5",
 		"smooth-scrollbar": "^8.8.4",
 		"smooth-scrollbar-react": "^2.4.1",
-		"socket.io-client": "^4.8.0",
 		"yup": "^1.4.0",
 		"zustand": "^5.0.0-rc.2"
 	},
