@@ -33,7 +33,7 @@ export const Sidebar = () => {
     }
 
     const navbarItemData = [
-        {title: "Home", icon: "streamline:dashboard-circle", path: "/dashboard/home"},
+        {title: "Home", icon: "streamline:dashboard-circle", path: "/account/home"},
         // {title: "Call Sessions", icon: "streamline:user-add-plus", path: "/dashboard/users"},
         // {title: "Voice Provider", icon: "streamline:bullet-list", path: "/dashboard/voice-provider"},
     ];

@@ -5,13 +5,14 @@ import { useFormik } from "formik";
 import { Icon } from "@iconify/react";
 import useApi from "@/hooks/useApi";
 import { toast } from "react-toastify";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiResponseInterface } from "@/types";
 import { makeRequest } from "@/helpers/request";
 import { callSchema } from "@/helpers/validators";
 import { useAuthStateStore } from "@/hooks/authStateStore";
 import { checkBoolean, todayDate } from "@/helpers/common";
 import { Button, Input, Tooltip, User } from "@nextui-org/react";
+import { Web } from "sip.js";
 
 import { LoadingContainer } from "@/components/loading-container";
 
@@ -21,15 +22,56 @@ export default function Home() {
         domain: "ng.sip.africastalking.com",
         webSocket: "ng.sip.africastalking.com",
         username: "agent.lagosvoice",
-        password: "DOPx_ad5cf82f2e"
+        password: "DOPx_ad5cf82f2e",
+        displayName: "Agent 1"
     };
 
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [calling, setCalling] = useState(false);
     const [callStatus, setCallStatus] = useState(null);
     const [sessionId, setSessionId] = useState<string>();
     const [client, setClient] = useState();
+
+    const initCallSettings = () => {
+        // Helper function to get an HTML audio element
+        const getAudioElement = (id: string): HTMLAudioElement => {
+            const el = audioRef.current;
+            if (!(el instanceof HTMLAudioElement)) {
+                throw new Error(`Element "${id}" not found or not an audio element.`);
+            }
+            return el;
+        }
+
+        // Options for SimpleUser
+        const options: Web.SimpleUserOptions = {
+            aor: `sip:${sipConfigurations.username}@${sipConfigurations.domain}`,
+            media: {
+                constraints: { audio: true, video: false }, // audio only call
+                remote: { audio: getAudioElement("remoteAudio") } // play remote audio
+            },
+            userAgentOptions: {
+                authorizationUsername: sipConfigurations.username,
+                authorizationPassword: sipConfigurations.password,
+                displayName: sipConfigurations.displayName,
+                viaHost: `${sipConfigurations.domain}`
+            }
+        };
+        
+        // WebSocket server to connect with
+        const server = `wss://${sipConfigurations.webSocket}`;
+        
+        // Construct a SimpleUser instance
+        const simpleUser = new Web.SimpleUser(server, options);
+        // Connect to server and place call
+        simpleUser.connect()
+        .then(() => {
+            console.log("Connected");
+        }).catch((error: Error) => {
+            console.log("Error", error);
+        });
+    }
 
     const [credentials, setCredentials] = useState<any>(null);
 
@@ -111,17 +153,23 @@ export default function Home() {
         }
     };
 
-
     // Call once
     useEffect(() => {
         fetchProviderCredentials();
         fetchUserProfile();
     }, []);
 
+    useEffect(() => {
+        initCallSettings();
+    }, []);
+
     const user = useAuthStateStore((state) => state.user);
 
     return (
         <>
+            <audio ref={audioRef} id="remoteAudio" controls>
+                <p>Your browser doesn't support HTML5 audio.</p>
+            </audio>
             <div className="col-span-full">
                 <div className="relative card bg-heading dark:bg-primary-500 py-7 xl:mb-8">
                     <div className="flex flex-col-reverse sm:flex-row gap-5 justify-between">
