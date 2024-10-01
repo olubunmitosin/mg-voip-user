@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
 import { ApiResponseInterface } from "@/types";
 import { registerSchema } from "@/helpers/validators";
-import { useAuthStateStore } from "@/hooks/authStateStore";
 import { makeRequest } from "@/helpers/request";
 import { checkBoolean } from "@/helpers/common";
 

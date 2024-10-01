@@ -1,12 +1,9 @@
 "use client";
 import * as React from "react";
 import { Icon } from "@iconify/react";
-import { toast } from "react-toastify";
-import { Input } from "@nextui-org/input";
-import { Switch } from "@nextui-org/switch";
 import { Button } from "@nextui-org/button";
 import { sessionListProps, ApiResponseInterface } from "@/types";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Select, SelectItem, CircularProgress } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Tooltip } from "@nextui-org/react";
 import { makeRequest } from "@/helpers/request";
 

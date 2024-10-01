@@ -1,9 +1,7 @@
 "use client";
 
-import axios from 'axios';
 import { useFormik } from "formik";
 import { Icon } from "@iconify/react";
-import useApi from "@/hooks/useApi";
 import { toast } from "react-toastify";
 import { useEffect, useRef, useState } from "react";
 import { ApiResponseInterface } from "@/types";
@@ -67,9 +65,9 @@ export default function Home() {
         // Connect to server and place call
         simpleUser.connect()
         .then(() => {
-            console.log("Connected");
+            // console.log("Connected");
         }).catch((error: Error) => {
-            console.log("Error", error);
+            // console.log("Error", error);
         });
     }
 
