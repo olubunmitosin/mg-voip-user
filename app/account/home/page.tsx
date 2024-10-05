@@ -4,7 +4,7 @@ import { useFormik } from "formik";
 import { Icon } from "@iconify/react";
 import { toast } from "react-toastify";
 import { useEffect, useRef, useState } from "react";
-import { ApiResponseInterface } from "@/types";
+import { AfricasTalkingClassOptions, AfricasTalkingConfig, ApiResponseInterface } from "@/types";
 import { makeRequest } from "@/helpers/request";
 import { callSchema } from "@/helpers/validators";
 import { useAuthStateStore } from "@/hooks/authStateStore";
@@ -13,65 +13,40 @@ import { Button, Input, Tooltip, User } from "@nextui-org/react";
 import { Web } from "sip.js";
 
 import { LoadingContainer } from "@/components/loading-container";
+import { AfricasTalking } from "@/classes/AfricasTalking";
+import axiosInstance from "@/hooks/axiosInstance";
+import { AxiosError } from "axios";
 
 export default function Home() {
 
+    // Get user instance
+    const user = useAuthStateStore((state) => state.user);
+
+    // wss://webrtc.africastalking.com/connect
+    // https://res.cloudinary.com/at-voice/video/upload/v1558426588/AT-voice-client-sdk/dialing_g4tn6r.mp3
+    // https://res.cloudinary.com/at-voice/video/upload/v1558426103/AT-voice-client-sdk/ringing_au0d1x.mp3 
+
     const sipConfigurations = {
         domain: "ng.sip.africastalking.com",
-        webSocket: "ng.sip.africastalking.com",
+        webSocket: "webrtc.africastalking.com/connect",
         username: "agent.lagosvoice",
         password: "DOPx_ad5cf82f2e",
-        displayName: "Agent 1"
+        displayName: "Agent 1",
+        dailing: "https://res.cloudinary.com/at-voice/video/upload/v1558426588/AT-voice-client-sdk/dialing_g4tn6r.mp3",
+        ringing: "https://res.cloudinary.com/at-voice/video/upload/v1558426103/AT-voice-client-sdk/ringing_au0d1x.mp3"
     };
 
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    let africasTalkingConfig: AfricasTalkingConfig;
+    let africasTalking: AfricasTalkingClassOptions;
+
+    let client = null;
+    const [credentials, setCredentials] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [calling, setCalling] = useState(false);
-    const [callStatus, setCallStatus] = useState(null);
+    const [callStatus, setCallStatus] = useState<any>(null);
     const [sessionId, setSessionId] = useState<string>();
-    const [client, setClient] = useState();
-
-    const initCallSettings = () => {
-        // Helper function to get an HTML audio element
-        const getAudioElement = (id: string): HTMLAudioElement => {
-            const el = audioRef.current;
-            if (!(el instanceof HTMLAudioElement)) {
-                throw new Error(`Element "${id}" not found or not an audio element.`);
-            }
-            return el;
-        }
-
-        // Options for SimpleUser
-        const options: Web.SimpleUserOptions = {
-            aor: `sip:${sipConfigurations.username}@${sipConfigurations.domain}`,
-            media: {
-                constraints: { audio: true, video: false }, // audio only call
-                remote: { audio: getAudioElement("remoteAudio") } // play remote audio
-            },
-            userAgentOptions: {
-                authorizationUsername: sipConfigurations.username,
-                authorizationPassword: sipConfigurations.password,
-                displayName: sipConfigurations.displayName,
-                viaHost: `${sipConfigurations.domain}`
-            }
-        };
-        
-        // WebSocket server to connect with
-        const server = `wss://${sipConfigurations.webSocket}`;
-        
-        // Construct a SimpleUser instance
-        const simpleUser = new Web.SimpleUser(server, options);
-        // Connect to server and place call
-        simpleUser.connect()
-        .then(() => {
-            // console.log("Connected");
-        }).catch((error: Error) => {
-            // console.log("Error", error);
-        });
-    }
-
-    const [credentials, setCredentials] = useState<any>(null);
+    const rtcClient = useRef<any>(null);
 
     const addUser = useAuthStateStore((state) => state.addUser);
     const today = todayDate();
@@ -109,6 +84,21 @@ export default function Home() {
         }
     }
 
+    const initCallSettings = () => {
+        if (credentials) {
+            africasTalkingConfig = {
+                username: credentials.credentials.username,
+                apiKey: credentials.credentials.apiKey,
+                fromNumber: credentials.credentials.phone,
+                domain: `${sipConfigurations.domain}`,
+                webSocket: `${sipConfigurations.webSocket}`
+            };
+
+            // initi class
+            africasTalking = new AfricasTalking(africasTalkingConfig);
+        }
+    }
+
     // Use Formik hook
     const formik = useFormik({
         initialValues: {
@@ -116,39 +106,74 @@ export default function Home() {
             provider_id: ""
         },
         validationSchema: callSchema,
-        onSubmit: async (values) => handleFormSubmit(values),
+        onSubmit: async (values) => makeOutgoingCall(values),
     });
 
     const { errors, touched, values, handleChange, handleSubmit } = formik;
 
-    // Handle form submission
-    const handleFormSubmit = async (values: any) => {
+    // Handle form submission (Make Call)
+    const makeOutgoingCall = async (values: any) => {
         setLoading(true);
 
-        values.provider_id = credentials?.id;
-        // Submit form
-        const formResponse: ApiResponseInterface = await makeRequest(
-            "/api/account/call/new",
-            "POST",
-            values,
-            true
-        );
+        const tokenReqPayload = {
+            username: `${sipConfigurations.username}`,
+            clientName: `${user?.name}`,
+            phoneNumer: `${credentials.credentials.phone}`,
+            incoming: false,
+            outgoing: true,
+        };
 
-        if (formResponse.status == false) {
-            toast.dismiss();
-            setLoading(false);
-            toast.error(formResponse.data.message, {
-                position: "bottom-right",
-            });
-        } else {
-            toast.dismiss();
-            toast.success(formResponse.data.message, {
-                position: "bottom-right",
-            });
-            setLoading(false);
-            // Set calling status
-
+        const tokenHeaders = {
+            'apiKey': `${credentials.credentials.apiKey}`,
         }
+
+        let tokenResponse;
+
+        try {
+            tokenResponse = await axiosInstance.request({
+                data: tokenReqPayload,
+                method: 'POST',
+                url: "https://webrtc.africastalking.com/capability-token/request",
+                headers: tokenHeaders
+            });
+
+        } catch (error: AxiosError | any) {
+            toast.dismiss();
+            toast.error(`${error.name}: ${error.message}`, {
+                position: "bottom-right",
+            });
+        }
+
+        if (tokenResponse) {
+            console.log(tokenResponse);
+        }
+        setLoading(false);
+        return;
+
+        // values.provider_id = credentials?.id;
+        // // Submit form
+        // const formResponse: ApiResponseInterface = await makeRequest(
+        //     "/api/account/call/new",
+        //     "POST",
+        //     values,
+        //     true
+        // );
+
+        // if (formResponse.status == false) {
+        //     toast.dismiss();
+        //     setLoading(false);
+        //     toast.error(formResponse.data.message, {
+        //         position: "bottom-right",
+        //     });
+        // } else {
+        //     toast.dismiss();
+        //     toast.success(formResponse.data.message, {
+        //         position: "bottom-right",
+        //     });
+        //     setLoading(false);
+        //     // Set calling status
+
+        // }
     };
 
     // Call once
@@ -157,17 +182,13 @@ export default function Home() {
         fetchUserProfile();
     }, []);
 
+    // Once credentials changes, prepare call settings
     useEffect(() => {
         initCallSettings();
-    }, []);
-
-    const user = useAuthStateStore((state) => state.user);
+    }, [credentials]);
 
     return (
         <>
-            <audio ref={audioRef} id="remoteAudio" controls>
-                <p>Your browser doesn't support HTML5 audio.</p>
-            </audio>
             <div className="col-span-full">
                 <div className="relative card bg-heading dark:bg-primary-500 py-7 xl:mb-8">
                     <div className="flex flex-col-reverse sm:flex-row gap-5 justify-between">
