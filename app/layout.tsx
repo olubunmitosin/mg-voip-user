@@ -5,6 +5,7 @@ import { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config/site";
 import { Providers } from "./providers";
 import { ToastContainer } from "react-toastify";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
@@ -49,6 +50,7 @@ export default function RootLayout({
             {children}
           </div>
         </Providers>
+        <Script type="text/javascript" src="/assets/js/africastalking.js" />
       </body>
     </html>
   );

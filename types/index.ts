@@ -79,24 +79,3 @@ export interface GenerateStateProps {
   insertItem: (key: string, value: any) => void,
   removeItem: (key: string) => void
 }
-
-export interface AfricasTalkingConfig {
-  username: string;
-  apiKey: string;
-  fromNumber: string;
-  domain: string;
-  webSocket: string;
-}
-
-export interface CallOptions {
-  toNumber: string;
-}
-
-export interface TransportOptions {
-  server: string;
-}
-
-export interface AfricasTalkingClassOptions {
-  initialize?: () => void;
-  makeCall?: (options: CallOptions) => Promise<SIP.Core.OutgoingInviteRequest | null>; // return sessionID
-}
