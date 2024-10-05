@@ -3,7 +3,7 @@
 import { useFormik } from "formik";
 import { Icon } from "@iconify/react";
 import { toast } from "react-toastify";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiResponseInterface } from "@/types";
 import { makeRequest } from "@/helpers/request";
 import { callSchema } from "@/helpers/validators";
@@ -15,7 +15,7 @@ import { LoadingContainer } from "@/components/loading-container";
 
 declare global {
     interface Window {
-        Africastalking:any;
+        Africastalking : any;
     }
 }
 
@@ -25,28 +25,18 @@ export default function Home() {
     const user = useAuthStateStore((state) => state.user);
 
     // wss://webrtc.africastalking.com/connect
-    // https://res.cloudinary.com/at-voice/video/upload/v1558426588/AT-voice-client-sdk/dialing_g4tn6r.mp3
-    // https://res.cloudinary.com/at-voice/video/upload/v1558426103/AT-voice-client-sdk/ringing_au0d1x.mp3 
 
-    const sipConfigurations = {
-        domain: "ng.sip.africastalking.com",
-        webSocket: "webrtc.africastalking.com/connect",
-        username: "agent.lagosvoice",
-        password: "DOPx_ad5cf82f2e",
-        displayName: "Agent 1",
-        dailing: "https://res.cloudinary.com/at-voice/video/upload/v1558426588/AT-voice-client-sdk/dialing_g4tn6r.mp3",
-        ringing: "https://res.cloudinary.com/at-voice/video/upload/v1558426103/AT-voice-client-sdk/ringing_au0d1x.mp3"
-    };
-
-
-    let client: any = null;
+    // let client: any = null;
+    const [client, setClient] = useState<any>(null);
     const [credentials, setCredentials] = useState<any>(null);
+    const [token, setToken] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [calling, setCalling] = useState(false);
+    const [ringing, setRinging] = useState(false);
     const [callStatus, setCallStatus] = useState<any>(null);
-    const [sessionId, setSessionId] = useState<string>();
-    const rtcClient = useRef<any>(null);
+    const [mute, setMute] = useState(false);
+    const [hold, setHold] = useState(false);
 
     const addUser = useAuthStateStore((state) => state.addUser);
     const today = todayDate();
@@ -62,10 +52,6 @@ export default function Home() {
         if (credentialResponse.status == true) {
             setCredentials(credentialResponse.data.response);
         }
-
-        // TEST
-        // setCalling(true);
-        // setSessionId('Session849484949');
     }
 
     // Fetch and set user data
@@ -84,10 +70,75 @@ export default function Home() {
         }
     }
 
-    const makeCall = (phone: string) => {
-        if (client) {
+    const makeCall = (callClient:any, phone: string) => {
+        // define local call client holder
+        let localClient: any;
+        // first assign local call client to global call client
+        localClient = client;
+        // If global call client is not yet initialized, set local call client to argument call client
+        if (!client) localClient = callClient;
+
+        if (localClient) {
             // client has been initialized
-            client.call(phone);
+            localClient.call(phone);
+            setTimeout(() => {
+                setLoading(false);
+            }, 500);
+        } else {
+            setLoading(false);
+        }
+    }
+
+    // Handle Hangup events
+    const onHandUp = () => {
+        if (client) {
+            client.hangup();
+            setCalling(false);
+            setRinging(false);
+            setCallStatus(null);
+        } else {
+            toast.dismiss();
+            toast.error("Call service has been properly initialized. Kindly wait a min!", {
+                position: "bottom-right",
+            });
+        }
+    }
+
+    // Handle Mute events
+    const onHandleMute = () => {
+        if (client) {
+            if (mute === false) {
+                client.mute();
+                setMute(true);
+
+            } else {
+
+                client.unmute();
+                setMute(false);
+            }
+        } else {
+            toast.dismiss();
+            toast.error("Call service has been properly initialized. Kindly wait a min!", {
+                position: "bottom-right",
+            });
+        }
+    }
+
+    // Handle Hold
+    const onHandleHold = () => {
+        if (client) {
+            if (hold === false) {
+                client.hold();
+                setHold(true);
+            } else {
+                client.unhold();
+                setHold(false);
+            }
+        } else {
+            toast.dismiss();
+            toast.error("Call service has been properly initialized. Kindly wait a min!", {
+                position: "bottom-right",
+            });
         }
     }
 
@@ -105,50 +156,95 @@ export default function Home() {
     // Handle form submission (Make Call)
     const makeOutgoingCall = async (values: any) => {
         setLoading(true);
-        const tokenResponse: ApiResponseInterface = await makeRequest(
-            "/api/account/call/token",
-            "POST",
-            {provider_id: credentials?.id},
-            true
-        );
+        let currentToken = token;
 
-        if (tokenResponse.status == false) {
-            toast.dismiss();
-            toast.error(`${tokenResponse?.data.message ?? "Could not get token"}`, {
-                position: "bottom-right",
-            });
-            setLoading(false);
-            return;
+        if (!token) {
+            const tokenResponse: ApiResponseInterface = await makeRequest(
+                "/api/account/call/token",
+                "POST",
+                {provider_id: credentials?.id},
+                true
+            );
+    
+            if (tokenResponse.status == false) {
+                toast.dismiss();
+                toast.error(`${tokenResponse?.data.message ?? "Could not get token"}`, {
+                    position: "bottom-right",
+                });
+                setLoading(false);
+                return;
+            }
+            
+            const callTokenData = tokenResponse.data.response;
+            setToken(callTokenData.token);
+            currentToken = callTokenData.token;
         }
-
         
-        const callTokenData = tokenResponse.data.response;
         // Check instance of client sdk
         if (typeof window !== "undefined") {
              // initialize call sdk
             let Africastalking = window.Africastalking;
-            client = new Africastalking.Client(callTokenData.token);
+            let tempClient = client;
+            if (!client) {
+                tempClient = new Africastalking.Client(currentToken);
+                setClient(tempClient);
+            }
+            // const tempClient = new Africastalking.Client(currentToken);
+            // setClient(tempClient);
             
             setTimeout(() => {
-                makeCall(`+${values.to}`);
-            }, 2000);
+                makeCall(tempClient, `+${values.to}`);
+            }, 8000);
 
         } else {
             toast.dismiss();
             toast.error("Call service has been properly initialized. Kindly wait a min!", {
                 position: "bottom-right",
             });
+            setLoading(false);
         }
-
-        setLoading(false);
-        return;
     };
+
+    // Handle call events
+    const handleCallEvents = () => {
+        if (client) {
+            client.on("calling", function () {
+                setMute(false);
+                setHold(false);
+                setCalling(true);
+                setRinging(true);
+                setCallStatus("Calling...");
+            }, false);
+
+            client.on("hangup", function (event: any) {
+                console.log("hangup", event);
+                setCalling(false);
+                setRinging(false);
+                setCallStatus(null);
+                toast.dismiss();
+                toast.info(`${event.reason ?? "Call Terminated or number not reachable"}`, {
+                    position: "bottom-right",
+                });
+            }, false);
+
+            client.on("callaccepted", function () {
+                setRinging(false);
+                setCallStatus("Call Accepted");
+            }, false);
+        }
+    }
+
 
     // Call once
     useEffect(() => {
         fetchProviderCredentials();
         fetchUserProfile();
     }, []);
+
+
+    useEffect(() => {
+        handleCallEvents();
+    }, [client]);
 
     return (
         <>
@@ -175,24 +271,23 @@ export default function Home() {
                         <div className="col-span-8 card min-h-32 text-white bg-success *:rounded-15 dark:bg-primary-500">
                             <div className="flex flex-col justify-center items-center">
                                 <span>{callStatus}</span>
-                                <span>{sessionId}</span>
                             </div>
                         </div>
                         <div className="col-span-4 card *:rounded-15">
                             <div className="flex flex-row flex-wrap gap-5">
                                 <Tooltip content="End Call">
-                                    <Button isIconOnly type="button" color="danger" aria-label="End Call">
+                                    <Button onClick={onHandUp} isIconOnly type="button" color="danger" aria-label="End Call">
                                         <Icon icon="solar:end-call-linear" fontSize={30} />
                                     </Button>
                                 </Tooltip>
                                 <Tooltip content="Mute">
-                                    <Button isIconOnly type="button" color="default" aria-label="Mute">
-                                        <Icon icon="quill:mute" fontSize={30} />
+                                    <Button onClick={onHandleMute} disabled={ringing} isIconOnly type="button" color={mute? "success": "default"} aria-label="Mute">
+                                        {mute ? <Icon icon="quill:unmute" fontSize={30} /> : <Icon icon="quill:mute" fontSize={30} />}
                                     </Button>
                                 </Tooltip>
                                 <Tooltip content="Hold">
-                                    <Button isIconOnly type="button" color="default" aria-label="Hold">
-                                        <Icon icon="ep:mute" fontSize={30} />
+                                    <Button onClick={onHandleHold} disabled={ringing} isIconOnly type="button" color={mute? "success": "default"} aria-label="Hold">
+                                        {hold ? <Icon icon="ep:unmute" fontSize={30} /> : <Icon icon="ep:mute" fontSize={30} />}
                                     </Button>
                                 </Tooltip>
                             </div>
@@ -226,7 +321,7 @@ export default function Home() {
                                     />
                                 </div>
 
-                                <Button disabled={calling} isLoading={loading ? true : false} className="btn b-solid btn-primary-solid font-bold w-full" type="submit">Call Now {<Icon icon="mdi:call" fontSize={20} />}</Button>
+                                <Button disabled={ringing} isLoading={loading ? true : false} className="btn b-solid btn-primary-solid font-bold w-full" type="submit">{<Icon icon="mdi:call" fontSize={20} />} Call Now</Button>
                             </form>
                         </div>
                     </div>
@@ -260,5 +355,4 @@ export default function Home() {
             </div>
         </>
     );
-
 }

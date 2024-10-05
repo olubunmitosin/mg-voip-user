@@ -1,5 +1,4 @@
 import { SVGProps } from "react";
-import * as SIP from "sip.js";
 
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -33,11 +32,14 @@ export type CredentialProps = {
 
 export type sessionListProps = {
   id: number,
+  user_id: number,
   session_id: string,
   from: string,
   to: string,
   direction: string,
   duration: string,
+  call_state: string,
+  carrier_name: string,
   status: string,
   created_at: string,
   updated_at: string,

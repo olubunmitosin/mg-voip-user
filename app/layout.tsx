@@ -46,9 +46,7 @@ export default function RootLayout({
           theme="light"
         />
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
-          <div className="main-content m-4">
-            {children}
-          </div>
+          {children}
         </Providers>
         <Script type="text/javascript" src="/assets/js/africastalking.js" />
       </body>

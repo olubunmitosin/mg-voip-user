@@ -1,40 +1,32 @@
 "use client";
 import * as React from "react";
-import { Icon } from "@iconify/react";
-import { Button } from "@nextui-org/button";
 import { sessionListProps, ApiResponseInterface } from "@/types";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Tooltip } from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip} from "@nextui-org/react";
 import { makeRequest } from "@/helpers/request";
 
 
-export default function AdminPage() {
+export default function CallSessionPage() {
 
     const [loading, setLoading] = React.useState(false);
     const [sessions, setSessions] = React.useState<sessionListProps[]>([]);
-    const [currentSession, setCurrentSession] = React.useState<sessionListProps>();
-    const { isOpen: viewModelOpen, onOpen: viewModalOnOpen, onOpenChange: viewModalOpenChange } = useDisclosure();
 
     const columns = [
-        { name: "SESSION ID", uid: "session" },
+        { name: "DIRECTION", uid: "direction" },
+        { name: "SESSION ID", uid: "session_id" },
         { name: "FROM", uid: "from" },
         { name: "TO", uid: "to" },
-        { name: "DIRECTION", uid: "direction" },
+        { name: "CALL STATE", uid: "call_state" },
+        { name: "CARRIER NAME", uid: "carrier_name" },
         { name: "DURATION", uid: "duration" },
         { name: "STATUS", uid: "status" },
-        { name: "ACTIONS", uid: "actions" },
     ];
 
-    const openAdminDetails = (session: sessionListProps) => {
-        setCurrentSession(session);
-        viewModalOnOpen();
-    }
 
     // Fetch and set call sessions data
     const fetchCallSessions = async () => {
         // Make get request
         const sessionResponse: ApiResponseInterface = await makeRequest(
-            "/api/admins/list",
+            "/api/account/call/sessions",
             "GET",
             {},
             true
@@ -52,41 +44,21 @@ export default function AdminPage() {
         fetchCallSessions();
     }, []);
 
-    const renderCell = React.useCallback((admin: any, columnKey: any) => {
-        const cellValue = admin[columnKey];
+    const renderCell = React.useCallback((session: any, columnKey: any) => {
+        const cellValue = session[columnKey];
 
         switch (columnKey) {
-            case "name":
-                return (
-                    <h6 className="card-title text-lg line-clamp-1">
-                        {cellValue}
-                    </h6>
-                );
-            case "role":
+            case "call_state":
                 return (
                     <Chip className="capitalize" color="default" size="sm" variant="flat">
-                        <span className="font-bold">{admin.roles[0].name}</span>
+                        <span className="font-bold">{session.call_state}</span>
                     </Chip>
                 );
-            case "verified":
-                return admin.is_verified == 1 ? "Yes" : "No";
             case "status":
                 return (
                     <Chip className="capitalize" color="default" size="sm" variant="flat">
-                        <span className="font-bold">{cellValue}</span>
+                        <span className="font-bold">{session.status}</span>
                     </Chip>
-                );
-            case "actions":
-                return (
-                    <div className="relative flex items-center gap-2">
-                        <Tooltip content="Details">
-                            <Button onClick={() => openAdminDetails(admin)} isIconOnly>
-                                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                                    <Icon icon="mdi:eye" fontSize={20} />
-                                </span>
-                            </Button>
-                        </Tooltip>
-                    </div>
                 );
             default:
                 return cellValue;
@@ -121,7 +93,7 @@ export default function AdminPage() {
                                     </TableColumn>
                                 )}
                             </TableHeader>
-                            <TableBody isLoading={loading} emptyContent={"No admin users found"} items={sessions}>
+                            <TableBody isLoading={loading} emptyContent={"No call sessions found"} items={sessions}>
                                 {(item) => (
                                     <TableRow key={item.id}>
                                         {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
@@ -132,60 +104,6 @@ export default function AdminPage() {
                     </div>
                 </div>
             </div>
-
-            <Modal
-                isOpen={viewModelOpen}
-                onOpenChange={viewModalOpenChange}
-                isDismissable={true}
-                size="2xl"
-                isKeyboardDismissDisabled={true}>
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader className="flex flex-col gap-1">Session Details</ModalHeader>
-                            <ModalBody>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Session ID</div>
-                                    <div className="">{currentSession?.session_id}</div>
-                                </div>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Caller</div>
-                                    <div className="">{currentSession?.from}</div>
-                                </div>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Destination</div>
-                                    <div className="">{currentSession?.to}</div>
-                                </div>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Duration</div>
-                                    <div className="">{currentSession?.duration}</div>
-                                </div>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Direction</div>
-                                    <div className="">{currentSession?.direction}</div>
-                                </div>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Status</div>
-                                    <div className="">
-                                        <Chip className="capitalize" size="md" variant="flat">
-                                            <span className="font-bold">{currentSession?.status}</span>
-                                        </Chip>
-                                    </div>
-                                </div>
-                                <div className="px-2 py-2 flex flex-row justify-between items-center">
-                                    <div className="">Joined Date</div>
-                                    <div className="">{(new Date(currentSession?.created_at ?? "").toDateString())}</div>
-                                </div>
-                            </ModalBody>
-                            <ModalFooter>
-                                <Button color="primary" variant="light" onPress={onClose}>
-                                    Close
-                                </Button>
-                            </ModalFooter>
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
         </>
     );
 }
