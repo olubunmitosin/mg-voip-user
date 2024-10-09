@@ -46,8 +46,8 @@ export default function Home() {
     const fetchProviderCredentials = async () => {
         const credentialResponse: ApiResponseInterface = await makeRequest(
             "/api/account/providers/details",
-            "POST",
-            { 'id': 1 },
+            "GET",
+            {},
             true
         );
         if (credentialResponse.status == true) {
