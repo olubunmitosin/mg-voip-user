@@ -30,6 +30,30 @@ export type CredentialProps = {
   isActive: boolean
 }
 
+export type vParameterProps = {
+  field: string,
+  label?: string,
+  description: string,
+  value: string
+}
+
+export type userVoIPSettingsProps = {
+  provider_id: string,
+  credentials: any
+}
+
+export type voipProviderListProps = {
+  id: number,
+  image: string,
+  slug: string,
+  name: string,
+  parameters: vParameterProps[],
+  active: boolean,
+  created_at: string,
+  updated_at: string,
+  [key: string]: any,
+}
+
 export type sessionListProps = {
   id: number,
   user_id: number,
