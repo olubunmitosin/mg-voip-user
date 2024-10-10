@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { sessionListProps, ApiResponseInterface } from "@/types";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip} from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Link} from "@nextui-org/react";
 import { makeRequest } from "@/helpers/request";
 
 
@@ -18,6 +18,7 @@ export default function CallSessionPage() {
         { name: "CALL STATE", uid: "call_state" },
         { name: "CARRIER NAME", uid: "carrier_name" },
         { name: "DURATION", uid: "duration" },
+        { name: "RECORD URL", uid: "record_url" },
         { name: "STATUS", uid: "status" },
     ];
 
@@ -48,6 +49,10 @@ export default function CallSessionPage() {
         const cellValue = session[columnKey];
 
         switch (columnKey) {
+            case "record_url":
+                return (
+                    <Link isBlock color="foreground" isExternal showAnchorIcon href={session.record_url}>Download</Link>
+                );
             case "call_state":
                 return (
                     <Chip className="capitalize" color="default" size="sm" variant="flat">
