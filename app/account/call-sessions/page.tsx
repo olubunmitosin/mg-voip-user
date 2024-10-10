@@ -15,6 +15,7 @@ export default function CallSessionPage() {
         { name: "SESSION ID", uid: "session_id" },
         { name: "FROM", uid: "from" },
         { name: "TO", uid: "to" },
+        { name: "CALL STATE", uid: "call_state" },
         { name: "CARRIER NAME", uid: "carrier_name" },
         { name: "DURATION", uid: "duration" },
         { name: "STATUS", uid: "status" },
@@ -47,6 +48,12 @@ export default function CallSessionPage() {
         const cellValue = session[columnKey];
 
         switch (columnKey) {
+            case "call_state":
+                return (
+                    <Chip className="capitalize" color="default" size="sm" variant="flat">
+                        <span className="font-bold">{session.call_state}</span>
+                    </Chip>
+                );
             case "status":
                 return (
                     <Chip className="capitalize" color="default" size="sm" variant="flat">
