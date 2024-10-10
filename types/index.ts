@@ -67,6 +67,7 @@ export type sessionListProps = {
   status: string,
   created_at: string,
   updated_at: string,
+  record_url: string,
 }
 
 export interface UserProps {
