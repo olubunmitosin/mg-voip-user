@@ -26,7 +26,6 @@ export const Sidebar = () => {
     const navbarItemData = [
         {title: "Home", icon: "streamline:dashboard-circle", path: "/account/home"},
         {title: "Call Sessions", icon: "streamline:user-add-plus", path: "/account/call-sessions"},
-        {title: "Provider Settings", icon: "streamline:bullet-list", path: "/account/provider-settings"},
     ];
 
   return (
