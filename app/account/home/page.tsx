@@ -35,6 +35,7 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [calling, setCalling] = useState(false);
+    const [incoming, setIncoming] = useState(false);
     const [ringing, setRinging] = useState(false);
     const [callStatus, setCallStatus] = useState<any>(null);
     const [mute, setMute] = useState(false);
@@ -104,10 +105,19 @@ export default function Home() {
             setCalling(false);
             setRinging(false);
             setCallStatus(null);
+        } else {
             toast.dismiss();
-            toast.success("Call ended!", {
+            toast.error("Call service has been properly initialized. Kindly wait a min!", {
                 position: "bottom-right",
             });
+        }
+    }
+
+    // Handle Hangup events
+    const onAnswerCall = () => {
+        if (client) {
+            client.answer();
+            setCallStatus("Call ongoing...");
         } else {
             toast.dismiss();
             toast.error("Call service has been properly initialized. Kindly wait a min!", {
@@ -263,11 +273,16 @@ export default function Home() {
 
             client.on("callaccepted", function () {
                 setRinging(false);
+                setIncoming(false);
                 setCallStatus("Call Accepted");
             }, false);
 
             client.on("incomingcall", function () {
-                client.answer();
+                setMute(false);
+                setCalling(true);
+                setIncoming(true);
+                setRinging(true);
+                setCallStatus("Incoming Call...");
             }, false);
         }
     }
@@ -325,16 +340,27 @@ export default function Home() {
                                 </div>
                                 <div className="col-span-4 card *:rounded-15">
                                     <div className="flex flex-row flex-wrap gap-5">
-                                        <Tooltip content="End Call">
-                                            <Button onClick={onHandUp} isIconOnly type="button" color="danger" aria-label="End Call">
-                                                <Icon icon="solar:end-call-linear" fontSize={30} />
-                                            </Button>
-                                        </Tooltip>
-                                        <Tooltip content={mute ? "Unmute": "Mute"}>
-                                            <Button onClick={onHandleMute} disabled={ringing} isIconOnly type="button" color={mute? "primary": "default"} aria-label="Mute">
-                                                {mute? <Icon icon="octicon:unmute-24" fontSize={30} /> : <Icon icon="octicon:mute-24" fontSize={30} />}
-                                            </Button>
-                                        </Tooltip>
+                                        {incoming && (
+                                            <Tooltip content="Answer Call">
+                                                <Button onClick={onAnswerCall} isIconOnly type="button" color="success" aria-label="Answer Call">
+                                                    <Icon icon="solar:end-call-linear" fontSize={30} />
+                                                </Button>
+                                            </Tooltip>
+                                        )}
+                                        {!incoming && (
+                                            <>
+                                                <Tooltip content="End Call">
+                                                    <Button onClick={onHandUp} isIconOnly type="button" color="danger" aria-label="End Call">
+                                                        <Icon icon="solar:end-call-linear" fontSize={30} />
+                                                    </Button>
+                                                </Tooltip>
+                                                <Tooltip content={mute ? "Unmute": "Mute"}>
+                                                    <Button onClick={onHandleMute} disabled={ringing} isIconOnly type="button" color={mute? "primary": "default"} aria-label="Mute">
+                                                        {mute? <Icon icon="octicon:unmute-24" fontSize={30} /> : <Icon icon="octicon:mute-24" fontSize={30} />}
+                                                    </Button>
+                                                </Tooltip>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -343,33 +369,35 @@ export default function Home() {
 
                     <div className="col-span-full card">
                         <div className="*:p-7 *:rounded-15 grid grid-cols-12 gap-4 mb-4">
-                            <div className="col-span-12">
-                                <div className="">
-                                    <form className="leading-none mt-8" onSubmit={handleSubmit}>
-                                        <div className="mb-2.5 pt-1">
-                                            <Input
-                                                isRequired
-                                                type="number"
-                                                name="to"
-                                                variant="bordered"
-                                                label="Phone Number"
-                                                labelPlacement="outside"
-                                                onChange={handleChange}
-                                                placeholder="234xxxxxxxxx"
-                                                isInvalid={checkBoolean(errors.to, touched.to)}
-                                                value={values.to}
-                                                errorMessage={errors.to}
-                                                classNames={{
-                                                    label: "form-label",
-                                                    inputWrapper: "form-input px-4 py-3.5 rounded-lg"
-                                                }}
-                                            />
-                                        </div>
+                            {!incoming && (
+                                <div className="col-span-12">
+                                    <div className="">
+                                        <form className="leading-none mt-8" onSubmit={handleSubmit}>
+                                            <div className="mb-2.5 pt-1">
+                                                <Input
+                                                    isRequired
+                                                    type="number"
+                                                    name="to"
+                                                    variant="bordered"
+                                                    label="Phone Number"
+                                                    labelPlacement="outside"
+                                                    onChange={handleChange}
+                                                    placeholder="234xxxxxxxxx"
+                                                    isInvalid={checkBoolean(errors.to, touched.to)}
+                                                    value={values.to}
+                                                    errorMessage={errors.to}
+                                                    classNames={{
+                                                        label: "form-label",
+                                                        inputWrapper: "form-input px-4 py-3.5 rounded-lg"
+                                                    }}
+                                                />
+                                            </div>
 
-                                        <Button disabled={ringing} isLoading={loading ? true : false} className="btn b-solid btn-primary-solid font-bold w-full" type="submit">{<Icon icon="mdi:call" fontSize={20} />} Call Now</Button>
-                                    </form>
+                                            <Button disabled={ringing} isLoading={loading ? true : false} className="btn b-solid btn-primary-solid font-bold w-full" type="submit">{<Icon icon="mdi:call" fontSize={20} />} Call Now</Button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                             <div className="col-span-12">
                                 {!loaded && !credentials ? (<LoadingContainer />) : (
                                     <div className="relative w-full">
