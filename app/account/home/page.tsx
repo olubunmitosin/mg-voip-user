@@ -154,6 +154,37 @@ export default function Home() {
 
     const { errors, touched, values, handleChange, handleSubmit } = formik;
 
+
+    // Init call token onload
+    const initCallToken = async () => {
+        let currentToken = token;
+        if (!token) {
+            const tokenResponse: ApiResponseInterface = await makeRequest(
+                "/api/account/call/token",
+                "GET",
+                {},
+                true
+            );
+    
+            if (tokenResponse.status == false) {
+                setLoading(false);
+                return;
+            }
+            
+            const callTokenData = tokenResponse.data.response;
+            setToken(callTokenData.token);
+            currentToken = callTokenData.token;
+
+            // Check instance of client sdk
+            if (typeof window !== "undefined") {
+                // initialize call sdk
+                let Africastalking = window.Africastalking;
+                const tempClient = new Africastalking.Client(currentToken);
+                setClient(tempClient);
+            }
+        }
+    }
+
     // Handle form submission (Make Call)
     const makeOutgoingCall = async (values: any) => {
         setLoading(true);
@@ -209,6 +240,9 @@ export default function Home() {
     // Handle call events
     const handleCallEvents = () => {
         if (client) {
+            client.on("ready", function () {
+                console.log("Call service has been properly initialized. Kindly wait a min!");
+            }, false);
             
             client.on("calling", function () {
                 setMute(false);
@@ -241,6 +275,7 @@ export default function Home() {
 
     // Call once
     useEffect(() => {
+        initCallToken();
         fetchProviderCredentials();
         fetchUserProfile();
     }, []);
