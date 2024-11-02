@@ -3,12 +3,13 @@ import * as React from "react";
 import { sessionListProps, ApiResponseInterface } from "@/types";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Link} from "@nextui-org/react";
 import { makeRequest } from "@/helpers/request";
+import { LoadingContainer } from "@/components/loading-container";
 
 
 export default function CallSessionPage() {
 
-    const [loading, setLoading] = React.useState(false);
     const [sessions, setSessions] = React.useState<sessionListProps[]>([]);
+    const [pageLoading, setPageLoading] = React.useState(true);
 
     const columns = [
         { name: "DIRECTION", uid: "direction" },
@@ -37,7 +38,7 @@ export default function CallSessionPage() {
             // save session data to state
             setSessions(sessionResponse.data.response)
         }
-        setLoading(false);
+        setPageLoading(false);
     }
 
     // Call once
@@ -70,45 +71,50 @@ export default function CallSessionPage() {
         }
     }, []);
 
-    return (
-        <>
-            <div className="card">
-                <div className="p-1.5">
-                    <div className="flex-center-between">
-                        <div className="flex items-center gap-5">
-                            <h6 className="leading-none text-[28px] font-semibold text-heading hidden md:block">Call Sessions</h6>
+
+    if (pageLoading) {
+        return (<LoadingContainer/>);
+    } else {
+        return (
+            <>
+                <div className="card">
+                    <div className="p-1.5">
+                        <div className="flex-center-between">
+                            <div className="flex items-center gap-5">
+                                <h6 className="leading-none text-[28px] font-semibold text-heading hidden md:block">Call Sessions</h6>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto scrollbar-table">
+                            <Table
+                                isCompact
+                                removeWrapper
+                                aria-label="Admins List"
+                                classNames={{
+                                    table: "table-auto w-full whitespace-nowrap text-left text-gray-500 dark:text-dark-text font-medium leading-none mt-5",
+                                    thead: "relative z-[1] before:absolute before:size-full before:bg-[#F4F4F4] dark:before:bg-dark-icon before:rounded-10 before:-z-[1]",
+                                    th: "font-semibold",
+                                    tbody: "divide-y divide-gray-200 dark:divide-dark-border-three text-heading dark:text-dark-text"
+                                }}>
+                                <TableHeader columns={columns}>
+                                    {(column) => (
+                                        <TableColumn key={column.uid} align={column.uid === "actions" ? "center" : "start"}>
+                                            {column.name}
+                                        </TableColumn>
+                                    )}
+                                </TableHeader>
+                                <TableBody isLoading={pageLoading ? true : false} emptyContent={"No call sessions found"} items={sessions}>
+                                    {(item) => (
+                                        <TableRow key={item.id}>
+                                            {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
-
-                    <div className="overflow-x-auto scrollbar-table">
-                        <Table
-                            isCompact
-                            removeWrapper
-                            aria-label="Admins List"
-                            classNames={{
-                                table: "table-auto w-full whitespace-nowrap text-left text-gray-500 dark:text-dark-text font-medium leading-none mt-5",
-                                thead: "relative z-[1] before:absolute before:size-full before:bg-[#F4F4F4] dark:before:bg-dark-icon before:rounded-10 before:-z-[1]",
-                                th: "font-semibold",
-                                tbody: "divide-y divide-gray-200 dark:divide-dark-border-three text-heading dark:text-dark-text"
-                            }}>
-                            <TableHeader columns={columns}>
-                                {(column) => (
-                                    <TableColumn key={column.uid} align={column.uid === "actions" ? "center" : "start"}>
-                                        {column.name}
-                                    </TableColumn>
-                                )}
-                            </TableHeader>
-                            <TableBody isLoading={loading} emptyContent={"No call sessions found"} items={sessions}>
-                                {(item) => (
-                                    <TableRow key={item.id}>
-                                        {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
                 </div>
-            </div>
-        </>
-    );
+            </>
+        );
+    }
 }
