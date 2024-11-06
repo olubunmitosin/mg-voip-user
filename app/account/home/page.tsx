@@ -309,7 +309,7 @@ export default function Home() {
 
     useEffect(() => {
         if (isAudioEnabled && typeof window !== "undefined") {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const context = new window.AudioContext();
             setAudioContext(context);
             context.resume();
         }
