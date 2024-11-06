@@ -25,11 +25,19 @@ export default function Home() {
     // Get user instance
     const user = useAuthStateStore((state) => state.user);
 
+    const params = {
+        sounds: {
+            ringing: '/assets/sounds/incoming_call.mp3',
+        },
+    };
+
     // wss://webrtc.africastalking.com/connect
 
     // let client: any = null;
     const [pageLoading, setPageLoading] = useState(true);
+    const [isAudioEnabled, setIsAudioEnabled] = useState(false);
     const [client, setClient] = useState<any>(null);
+    const [audioContext, setAudioContext] = useState<any>(null);
     const [credentials, setCredentials] = useState<any>(null);
     const [token, setToken] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -106,7 +114,6 @@ export default function Home() {
             setRinging(false);
             setCallStatus(null);
         } else {
-            toast.dismiss();
             toast.error("Call service has been properly initialized. Kindly wait a min!", {
                 position: "bottom-right",
             });
@@ -164,6 +171,9 @@ export default function Home() {
 
     const { errors, touched, values, handleChange, handleSubmit } = formik;
 
+    const handleEnableAudio = () => {
+        setIsAudioEnabled(true);
+    }
 
     // Init call token onload
     const initCallToken = async () => {
@@ -189,7 +199,7 @@ export default function Home() {
             if (typeof window !== "undefined") {
                 // initialize call sdk
                 let Africastalking = window.Africastalking;
-                const tempClient = new Africastalking.Client(currentToken);
+                const tempClient = new Africastalking.Client(currentToken, params);
                 setClient(tempClient);
             }
         }
@@ -228,18 +238,15 @@ export default function Home() {
             let Africastalking = window.Africastalking;
             let tempClient = client;
             if (!client) {
-                tempClient = new Africastalking.Client(currentToken);
+                tempClient = new Africastalking.Client(currentToken, params);
                 setClient(tempClient);
             }
-            // const tempClient = new Africastalking.Client(currentToken);
-            // setClient(tempClient);
             
             setTimeout(() => {
                 makeCall(tempClient, `+${values.to}`);
             }, 8000);
 
         } else {
-            toast.dismiss();
             toast.error("Call service has been properly initialized. Kindly wait a min!", {
                 position: "bottom-right",
             });
@@ -265,7 +272,6 @@ export default function Home() {
                 setCalling(false);
                 setRinging(false);
                 setCallStatus(null);
-                toast.dismiss();
                 toast.info(`${event.reason ?? "Call Terminated or number not reachable"}`, {
                     position: "bottom-right",
                 });
@@ -300,6 +306,15 @@ export default function Home() {
         handleCallEvents();
     }, [client]);
 
+
+    useEffect(() => {
+        if (isAudioEnabled && typeof window !== "undefined") {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            setAudioContext(context);
+            context.resume();
+        }
+    }, [isAudioEnabled]);
+
     if (pageLoading) {
         return (<LoadingContainer/>);
     } else {
@@ -330,6 +345,7 @@ export default function Home() {
                     </div>
                 ) : (
                     <>
+                    {!isAudioEnabled && (<Button className="btn b-solid btn-primary-solid font-bold my-3" onClick={handleEnableAudio}>Click to enable call sounds</Button>)}
                     {calling && (
                         <div className="col-span-full">
                             <div className="*:p-7 grid grid-cols-12 gap-5 mb-3">
